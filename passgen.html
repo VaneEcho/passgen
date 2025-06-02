@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>密码生成器</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary: #64748b;
+            --success: #059669;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --background: #ffffff;
+            --surface: #f8fafc;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .theme-toggle {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        .theme-toggle:hover {
+            background: var(--border);
+        }
+
+        .main-card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+        }
+
+        .generated-passwords {
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .generated-passwords h3 {
+            margin-bottom: 1rem;
+            color: var(--text);
+            font-size: 1.2rem;
+        }
+
+        .password-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 0.75rem;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .password-item:hover {
+            border-color: var(--primary);
+        }
+
+        .password-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .password-text {
+            flex: 1;
+            margin-right: 1rem;
+        }
+
+        .copy-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .copy-btn:hover {
+            background: #047857;
+        }
+
+        .copy-btn.copied {
+            background: var(--primary);
+        }
+
+        .generate-button {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .generate-button:hover {
+            background: var(--primary-hover);
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .mode-button {
+            flex: 1;
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            font-weight: 500;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+
+        .mode-button.active {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .mode-button:hover:not(.active) {
+            border-color: var(--primary);
+        }
+
+        .settings-panel {
+            margin-bottom: 1rem;
+        }
+
+        .setting-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .setting-label {
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.6rem;
+            display: block;
+            font-size: 0.95rem;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+
+        .slider-value {
+            min-width: 3rem;
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary);
+            background: var(--background);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.6rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .checkbox-item:hover {
+            border-color: var(--primary);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin-right: 0.6rem;
+            cursor: pointer;
+        }
+
+        .passphrase-settings {
+            display: none;
+        }
+
+        .passphrase-settings.active {
+            display: block;
+        }
+
+        .word-count-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .separator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .separator-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .separator-item:hover {
+            border-color: var(--primary);
+        }
+
+        .separator-item input[type="radio"] {
+            margin-right: 0.4rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0.8rem;
+            }
+            
+            .main-card {
+                padding: 1.2rem;
+            }
+            
+            .mode-selector {
+                flex-direction: column;
+            }
+            
+            .checkbox-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .separator-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .password-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.6rem;
+            }
+            
+            .password-text {
+                margin-right: 0;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>密码生成器</h1>
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-text">深色模式</span>
+            </button>
+        </div>
+
+        <div class="main-card">
+            <div class="generated-passwords">
+                <h3>生成的密码</h3>
+                <div id="password-list"></div>
+            </div>
+            
+            <button class="generate-button" onclick="generatePasswords()">生成密码</button>
+            
+            <div class="mode-selector">
+                <button class="mode-button active" onclick="setMode('random')">随机密码</button>
+                <button class="mode-button" onclick="setMode('passphrase')">短语密码</button>
+            </div>
+
+            <div class="settings-panel">
+                <!-- 随机密码设置 -->
+                <div class="random-settings" id="random-settings">
+                    <div class="setting-group">
+                        <label class="setting-label">密码长度</label>
+                        <div class="slider-container">
+                            <input type="range" class="slider" id="length" min="8" max="32" value="16" oninput="updateLength(); generatePasswords()">
+                            <span class="slider-value" id="length-value">16</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">字符类型</label>
+                        <div class="checkbox-grid">
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="uppercase" checked onchange="generatePasswords()">
+                                <span>大写字母 (A-Z)</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="lowercase" checked onchange="generatePasswords()">
+                                <span>小写字母 (a-z)</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="numbers" checked onchange="generatePasswords()">
+                                <span>数字 (0-9)</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="markdown-safe" checked onchange="generatePasswords()">
+                                <span>Markdown安全符号</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="exclude-similar" checked onchange="generatePasswords()">
+                                <span>排除相似字符</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="symbols" onchange="generatePasswords()">
+                                <span>其他特殊符号</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 短语密码设置 -->
+                <div class="passphrase-settings" id="passphrase-settings">
+                    <div class="setting-group">
+                        <label class="setting-label">单词数量</label>
+                        <div class="slider-container">
+                            <input type="range" class="slider" id="word-count" min="2" max="8" value="4" oninput="updateWordCount(); generatePasswords()">
+                            <span class="slider-value" id="word-count-value">4</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">连接符</label>
+                        <div class="separator-grid">
+                            <label class="separator-item">
+                                <input type="radio" name="separator" value="-" checked onchange="generatePasswords()">
+                                <span>-</span>
+                            </label>
+                            <label class="separator-item">
+                                <input type="radio" name="separator" value="." onchange="generatePasswords()">
+                                <span>.</span>
+                            </label>
+                            <label class="separator-item">
+                                <input type="radio" name="separator" value="_" onchange="generatePasswords()">
+                                <span>_</span>
+                            </label>
+                            <label class="separator-item">
+                                <input type="radio" name="separator" value=")" onchange="generatePasswords()">
+                                <span>)</span>
+                            </label>
+                            <label class="separator-item">
+                                <input type="radio" name="separator" value="" onchange="generatePasswords()">
+                                <span>无</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <div class="checkbox-grid">
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="add-numbers" onchange="generatePasswords()">
+                                <span>添加数字</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="capitalize" onchange="generatePasswords()">
+                                <span>首字母大写</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'random';
+        
+        const charSets = {
+            uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            lowercase: 'abcdefghijklmnopqrstuvwxyz',
+            numbers: '0123456789',
+            symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?',
+            markdownSafe: '.+=_-<>[]{}()/#&*~',
+            similar: '!$0125689BDGIOQSZbgijloqsz|'
+        };
+
+        const commonWords = [
+            'apple', 'banana', 'cherry', 'dragon', 'eagle', 'forest', 'garden', 'house',
+            'island', 'jungle', 'kitten', 'lemon', 'mountain', 'ocean', 'piano', 'queen',
+            'river', 'sunset', 'tiger', 'umbrella', 'violet', 'window', 'yellow', 'zebra',
+            'bridge', 'castle', 'dream', 'flower', 'guitar', 'happy', 'light', 'magic',
+            'nature', 'orange', 'peace', 'rabbit', 'smile', 'travel', 'wonder', 'bright',
+            'cloud', 'dance', 'energy', 'freedom', 'golden', 'harmony', 'journey', 'kindness',
+            'lovely', 'melody', 'noble', 'power', 'quiet', 'rainbow', 'strong', 'thunder'
+        ];
+
+        // 初始化
+        window.onload = function() {
+            loadTheme();
+            generatePasswords();
+        };
+
+        function toggleTheme() {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            document.getElementById('theme-text').textContent = isDark ? '深色模式' : '浅色模式';
+            localStorage.setItem('theme', isDark ? 'light' : 'dark');
+        }
+
+        function loadTheme() {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.body.setAttribute('data-theme', theme);
+            document.getElementById('theme-text').textContent = theme === 'dark' ? '浅色模式' : '深色模式';
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            const buttons = document.querySelectorAll('.mode-button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('random-settings').classList.toggle('hidden', mode !== 'random');
+            document.getElementById('passphrase-settings').classList.toggle('active', mode === 'passphrase');
+            
+            generatePasswords();
+        }
+
+        function generatePasswords() {
+            const container = document.getElementById('password-list');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 5; i++) {
+                const password = currentMode === 'random' ? generateRandomPassword() : generatePassphrase();
+                createPasswordItem(password, container);
+            }
+        }
+
+        function generateRandomPassword() {
+            const length = parseInt(document.getElementById('length').value);
+            let chars = '';
+            
+            if (document.getElementById('uppercase').checked) chars += charSets.uppercase;
+            if (document.getElementById('lowercase').checked) chars += charSets.lowercase;
+            if (document.getElementById('numbers').checked) chars += charSets.numbers;
+            if (document.getElementById('symbols').checked) chars += charSets.symbols;
+            if (document.getElementById('markdown-safe').checked) chars += charSets.markdownSafe;
+            
+            if (document.getElementById('exclude-similar').checked) {
+                chars = chars.split('').filter(char => !charSets.similar.includes(char)).join('');
+            }
+            
+            if (chars.length === 0) {
+                alert('请至少选择一种字符类型！');
+                return '';
+            }
+            
+            let password = '';
+            for (let i = 0; i < length; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            
+            return password;
+        }
+
+        function generatePassphrase() {
+            const wordCount = parseInt(document.getElementById('word-count').value);
+            const separator = document.querySelector('input[name="separator"]:checked').value;
+            const addNumbers = document.getElementById('add-numbers').checked;
+            const capitalize = document.getElementById('capitalize').checked;
+            
+            const selectedWords = [];
+            const usedIndexes = new Set();
+            
+            while (selectedWords.length < wordCount) {
+                const index = Math.floor(Math.random() * commonWords.length);
+                if (!usedIndexes.has(index)) {
+                    usedIndexes.add(index);
+                    let word = commonWords[index];
+                    
+                    // 首字母大写处理
+                    if (capitalize) {
+                        word = word.charAt(0).toUpperCase() + word.slice(1);
+                    }
+                    
+                    selectedWords.push(word);
+                }
+            }
+            
+            let passphrase = selectedWords.join(separator);
+            
+            if (addNumbers) {
+                const randomNum = Math.floor(Math.random() * 1000);
+                passphrase += (separator || '') + randomNum;
+            }
+            
+            return passphrase;
+        }
+
+        function createPasswordItem(password, container) {
+            const item = document.createElement('div');
+            item.className = 'password-item';
+            item.onclick = function() { copyText(password, this); };
+            
+            const span = document.createElement('span');
+            span.className = 'password-text';
+            span.textContent = password;
+            
+            const button = document.createElement('button');
+            button.className = 'copy-btn';
+            button.textContent = '复制';
+            button.onclick = function(e) { 
+                e.stopPropagation(); // 阻止事件冒泡
+                copyText(password, this); 
+            };
+            
+            item.appendChild(span);
+            item.appendChild(button);
+            container.appendChild(item);
+        }
+
+        function copyText(text, element) {
+            navigator.clipboard.writeText(text).then(() => {
+                const button = element.querySelector('.copy-btn') || element;
+                button.classList.add('copied');
+                const originalText = button.textContent;
+                button.textContent = '已复制';
+                
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.textContent = originalText;
+                }, 2000);
+            }).catch(() => {
+                // 备用复制方法
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                const button = element.querySelector('.copy-btn') || element;
+                button.classList.add('copied');
+                const originalText = button.textContent;
+                button.textContent = '已复制';
+                
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        function updateLength() {
+            document.getElementById('length-value').textContent = document.getElementById('length').value;
+        }
+        
+        function updateWordCount() {
+            document.getElementById('word-count-value').textContent = document.getElementById('word-count').value;
+        }
+    </script>
+</body>
+</html>
