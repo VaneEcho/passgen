@@ -12,6 +12,8 @@
             --success: #059669;
             --danger: #dc2626;
             --warning: #d97706;
+            --action: #c2410c;
+            --action-hover: #9a3412;
             --background: #ffffff;
             --surface: #f8fafc;
             --border: #e2e8f0;
@@ -29,6 +31,8 @@
             --border: #334155;
             --text: #f8fafc;
             --text-muted: #94a3b8;
+            --action: #f97316;
+            --action-hover: #ea580c;
         }
 
         * {
@@ -110,9 +114,8 @@
             border: 1px solid var(--border);
             border-radius: 6px;
             margin-bottom: 0.5rem;
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
             font-size: 0.85rem;
-            word-break: break-all;
             cursor: pointer;
             transition: all 0.2s ease;
         }
@@ -132,7 +135,11 @@
 
         .password-text {
             flex: 1;
+            min-width: 0;
             margin-right: 0.8rem;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: thin;
         }
 
         .copy-btn {
@@ -164,7 +171,7 @@
 
         .generate-button {
             flex: 1;
-            background: var(--primary);
+            background: var(--action);
             color: white;
             border: none;
             border-radius: 8px;
@@ -176,7 +183,12 @@
         }
 
         .generate-button:hover {
-            background: var(--primary-hover);
+            background: var(--action-hover);
+        }
+
+        .generate-button:focus-visible {
+            outline: 3px solid var(--action);
+            outline-offset: 2px;
         }
 
         .mode-selector {
@@ -366,10 +378,9 @@
         }
     </style>
 
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         html, body {
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
             transition: background-color 0.4s ease, color 0.4s ease;
         }
         .password-item {
@@ -400,8 +411,8 @@
             <div class="controls-row">
                 <button class="generate-button" onclick="generatePasswords()">生成密码</button>
                 <div class="mode-selector">
-                    <button class="mode-button active" onclick="setMode('random')">随机密码</button>
-                    <button class="mode-button" onclick="setMode('passphrase')">短语密码</button>
+                    <button class="mode-button active" onclick="setMode('random', this)">随机密码</button>
+                    <button class="mode-button" onclick="setMode('passphrase', this)">短语密码</button>
                 </div>
             </div>
 
@@ -500,6 +511,7 @@
         </div>
     </div>
 
+    <script src="eff-large-wordlist.js"></script>
     <script>
         let currentMode = 'random';
         let lastCopiedPassword = null; // 记录最后复制的密码
@@ -513,15 +525,8 @@
             similar: '!$0125689BDGIOQSZbgijloqsz|'
         };
 
-        const commonWords = [
-            'apple', 'banana', 'cherry', 'dragon', 'eagle', 'forest', 'garden', 'house',
-            'island', 'jungle', 'kitten', 'lemon', 'mountain', 'ocean', 'piano', 'queen',
-            'river', 'sunset', 'tiger', 'umbrella', 'violet', 'window', 'yellow', 'zebra',
-            'bridge', 'castle', 'dream', 'flower', 'guitar', 'happy', 'light', 'magic',
-            'nature', 'orange', 'peace', 'rabbit', 'smile', 'travel', 'wonder', 'bright',
-            'cloud', 'dance', 'energy', 'freedom', 'golden', 'harmony', 'journey', 'kindness',
-            'lovely', 'melody', 'noble', 'power', 'quiet', 'rainbow', 'strong', 'thunder'
-        ];
+        const commonWords = EFF_LARGE_WORDLIST;
+        const colorScheme = window.matchMedia('(prefers-color-scheme: dark)');
 
         // 初始化
         window.onload = function() {
@@ -531,22 +536,32 @@
 
         function toggleTheme() {
             const isDark = document.body.getAttribute('data-theme') === 'dark';
-            document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-            document.getElementById('theme-text').textContent = isDark ? '深色模式' : '浅色模式';
+            applyTheme(isDark ? 'light' : 'dark');
             localStorage.setItem('theme', isDark ? 'light' : 'dark');
         }
 
         function loadTheme() {
-            const theme = localStorage.getItem('theme') || 'light';
+            const savedTheme = localStorage.getItem('theme');
+            const theme = savedTheme || (colorScheme.matches ? 'dark' : 'light');
+            applyTheme(theme);
+        }
+
+        function applyTheme(theme) {
             document.body.setAttribute('data-theme', theme);
             document.getElementById('theme-text').textContent = theme === 'dark' ? '浅色模式' : '深色模式';
         }
 
-        function setMode(mode) {
+        colorScheme.addEventListener('change', (event) => {
+            if (!localStorage.getItem('theme')) {
+                applyTheme(event.matches ? 'dark' : 'light');
+            }
+        });
+
+        function setMode(mode, button) {
             currentMode = mode;
             const buttons = document.querySelectorAll('.mode-button');
             buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            button.classList.add('active');
             
             document.getElementById('random-settings').classList.toggle('hidden', mode !== 'random');
             document.getElementById('passphrase-settings').classList.toggle('active', mode === 'passphrase');
@@ -634,7 +649,7 @@
                 // 将必需字符插入到随机位置
                 password = password.split('');
                 requiredChars.forEach(char => {
-                    const pos = Math.floor(Math.random() * (password.length + 1));
+                    const pos = secureRandomInt(password.length + 1);
                     password.splice(pos, 0, char);
                 });
                 password = password.join('');
@@ -643,14 +658,27 @@
             return password;
         }
 
+        function secureRandomInt(maxExclusive) {
+            if (!Number.isInteger(maxExclusive) || maxExclusive <= 0 || maxExclusive > 0x100000000) {
+                throw new RangeError('maxExclusive must be a positive integer');
+            }
+
+            const limit = 0x100000000 - (0x100000000 % maxExclusive);
+            const values = new Uint32Array(1);
+            do {
+                crypto.getRandomValues(values);
+            } while (values[0] >= limit);
+            return values[0] % maxExclusive;
+        }
+
         function getRandomChar(chars) {
-            return chars.charAt(Math.floor(Math.random() * chars.length));
+            return chars.charAt(secureRandomInt(chars.length));
         }
 
         function shuffleArray(array) {
             const newArray = [...array];
             for (let i = newArray.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
+                const j = secureRandomInt(i + 1);
                 [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
             }
             return newArray;
@@ -666,7 +694,7 @@
             const usedIndexes = new Set();
             
             while (selectedWords.length < wordCount) {
-                const index = Math.floor(Math.random() * commonWords.length);
+                const index = secureRandomInt(commonWords.length);
                 if (!usedIndexes.has(index)) {
                     usedIndexes.add(index);
                     let word = commonWords[index];
@@ -683,7 +711,7 @@
             let passphrase = selectedWords.join(separator);
             
             if (addNumbers) {
-                const randomNum = Math.floor(Math.random() * 1000);
+                const randomNum = secureRandomInt(1000);
                 passphrase += (separator || '') + randomNum;
             }
             
