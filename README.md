@@ -2,6 +2,8 @@
 
 按你的需要，随手生成一组密码或单词短语。
 
+[在线打开](https://vaneecho.github.io/passgen/passgen.html)
+
 ![Passgen 界面](preview.png)
 
 下载 [passgen.html](https://github.com/VaneEcho/passgen/raw/refs/heads/main/passgen.html)，用浏览器打开。只有这一个文件，不用安装，断网也能用。
